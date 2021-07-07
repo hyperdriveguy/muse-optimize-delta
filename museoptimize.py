@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 import argparse
+from ast import Index
 
 
 def main():
     args = get_args()
     input_file = read_file(args.asm)
+    print(input_file)
+    calc_song_size(input_file)
 
 
 def get_args():
@@ -30,7 +33,24 @@ def read_file(filename):
 
 
 def calc_song_size(song):
-    pass
+    scrubbed_song = tuple(filter(filter_non_command, song))
+    print('SCRUBBED', scrubbed_song)
+
+
+def filter_non_command(line):
+    clean_line = line.strip()
+    # Check if line is blank
+    if clean_line == '':
+        return False
+    # Check for labels
+    elif clean_line[:-1] == ':':
+        return False
+    # Skip commented out lines
+    # Inline comments still work
+    elif clean_line[0] == ';':
+        return False
+    
+    return True
 
 
 def get_root_command(raw_command):
@@ -62,8 +82,11 @@ def get_command_size(root_command):
                       3, 3, 4,
                       1, 4, 2, 2,
                       2, 3)
-    
-    bytesize = size_map_bytes[size_map_names.index(root_command)]
+    try:
+        bytesize = size_map_bytes[size_map_names.index(root_command)]
+    except IndexError:
+        print(f'Unknown music command {root_command}, assuming size 1')
+        bytesize = 1
 
     return bytesize
 
