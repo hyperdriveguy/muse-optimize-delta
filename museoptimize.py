@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 import argparse
+from functools import reduce
 from ast import Index
 
 
 def main():
     args = get_args()
     input_file = read_file(args.asm)
-    print(input_file)
-    calc_song_size(input_file)
+    if input_file == ():
+        return
+    pre_optimized_size = calc_song_size(input_file)
+    print(pre_optimized_size)
 
 
 def get_args():
@@ -28,13 +31,23 @@ def read_file(filename):
         print(f'Input file {filename} does not exist.')
     except PermissionError:
         print(f'No permission to read file {filename}.')
-    
+
     return ()
 
 
 def calc_song_size(song):
     scrubbed_song = tuple(filter(filter_non_command, song))
-    print('SCRUBBED', scrubbed_song)
+    command_bytes = multi_map(scrubbed_song, get_root_command, get_command_size)
+    accumulator = lambda a, b: a + b
+    song_size = reduce(accumulator, command_bytes)
+    return song_size
+
+
+def multi_map(iterable, *functions):
+    mapped = iterable
+    for function in functions:
+        mapped = tuple(map(function, mapped))
+    return mapped
 
 
 def filter_non_command(line):
@@ -42,14 +55,17 @@ def filter_non_command(line):
     # Check if line is blank
     if clean_line == '':
         return False
-    # Check for labels
-    elif clean_line[:-1] == ':':
-        return False
     # Skip commented out lines
-    # Inline comments still work
+    # Inline comments still work for non-labels
     elif clean_line[0] == ';':
         return False
-    
+    # Check for labels
+    elif clean_line[-1] == ':':
+        return False
+    # Check for inline comments
+    elif ';' in clean_line and clean_line.split(';')[0].strip()[-1] == ':':
+        return False
+
     return True
 
 
@@ -77,7 +93,7 @@ def get_command_size(root_command):
                       'endchannel', 'jumpif', 'setcondition', 'togglenoise',
                       'volume', 'musicheader')
     size_map_bytes = (1, 1, 2, 3,
-                      2, 2, 2, 2,
+                      2, 2, 3, 2,
                       2, 3, 3, 2,
                       3, 3, 4,
                       1, 4, 2, 2,
