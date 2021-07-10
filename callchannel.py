@@ -130,21 +130,6 @@ def range_in_blacklist(start, lookahead, blacklist):
 
 def make_called_channel_blacklist(song):
 
-    def build_callchannel_range(label):
-        start_bad = None
-        end_bad = None
-        for index in range(len(song)):
-            if song[index] == label:
-                start_bad = index
-            elif start_bad is not None and song[index] == '\tendchannel\n':
-                end_bad = index
-        if start_bad is None:
-            raise IndexError(f'Called branch {label} was not found in song')
-        if end_bad is None:
-            raise IndexError(f'Called branch {label} '
-                             'has no matching endchannel')
-        return tuple(range(start_bad, end_bad + 1))
-
     def filter_label_exists(line):
         if line in song:
             return True
@@ -161,8 +146,28 @@ def make_called_channel_blacklist(song):
     called_branch_label = tuple(map(format_channel_label, called_channels))
     existing_labels = util_funcs.remove_dup(
         tuple(filter(filter_label_exists, called_branch_label)))
-    blacklisted_indexes = tuple(map(build_callchannel_range, existing_labels))
 
+    return build_callchannel_range(existing_labels, song)
+
+
+def build_callchannel_range(labels, song):
+
+    def get_range(label):
+        start_bad = None
+        end_bad = None
+        for index in range(len(song)):
+            if song[index] == label:
+                start_bad = index
+            elif start_bad is not None and song[index] == '\tendchannel\n':
+                end_bad = index
+        if start_bad is None:
+            raise IndexError(f'Called branch {label} was not found in song')
+        if end_bad is None:
+            raise IndexError(f'Called branch {label} '
+                                'has no matching endchannel')
+        return tuple(range(start_bad, end_bad + 1))
+
+    blacklisted_indexes = tuple(map(get_range, labels))
     return util_funcs.flatten_tuple(blacklisted_indexes)
 
 
@@ -179,15 +184,18 @@ def make_unoptimizable_blacklist(song):
         return False
 
     def unoptimizable_indexes(line):
+        found_indexes = ()
         for index in range(len(song)):
             if song[index] == line:
-                return index
+                found_indexes = util_funcs.tuple_append(found_indexes, (index,))
+        return found_indexes
 
     filtered_unoptimizable = tuple(filter(filter_unoptimizable, song))
-    blacklisted_indexes = tuple(map(
+    occurences = tuple(map(
         unoptimizable_indexes, filtered_unoptimizable))
+    blacklist = util_funcs.remove_dup(util_funcs.flatten_tuple(occurences))
 
-    return blacklisted_indexes
+    return blacklist
 
 
 def make_label_blacklist(song):
