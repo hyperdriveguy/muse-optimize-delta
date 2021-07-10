@@ -256,7 +256,7 @@ no_nesting = ('Yeet:\n',
               '\tcallchannel yote\n',
               '\tnote A_, 2\n',
               '\tcallchannel yote\n',
-              '\tjumpchannel Yeet\n'
+              '\tjumpchannel Yeet\n',
               'yote:\n',
               '\tnote A_, 2\n',
               '\tnote B_, 2\n',
@@ -500,9 +500,7 @@ def test_get_command_size():
 def test_optimize_callchannel():
     assert callchannel.optimize_callchannel(empty_score_asm_scrubbed) == \
         empty_score_asm_optimized
-
-    called_optimum = callchannel.optimize_callchannel(no_nesting)
-    assert called_optimum == no_nesting
+    assert callchannel.optimize_callchannel(no_nesting) == no_nesting
 
 
 def test_build_ideal_lookahead():
@@ -544,12 +542,100 @@ def test_calc_callchannel_savings():
 
 
 def test_parse_matches():
-    expected_new_blacklist = (
-        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 19, 21, 24, 26, 27)
-    parsed_empty_score = callchannel.parse_matches(
+    global new_blacklist_empty
+    song_empty, branch_empty, new_blacklist_empty = callchannel.parse_matches(
         empty_score_asm_scrubbed, 11, 15, empty_score_blacklist, 1)
-    song, branch, new_blacklist = parsed_empty_score
-    assert util_funcs.tuple_append(song, branch) == empty_score_asm_optimized
+    assert util_funcs.tuple_append(song_empty, branch_empty) == \
+        empty_score_asm_optimized
+
+    # We should get none of the matching lines optimized out
+    global new_blacklist_no_nest
+    song_no_nest, branch_no_nest, new_blacklist_no_nest = \
+        callchannel.parse_matches(no_nesting, 1, 1, no_nesting_blacklist, 1)
+    song_and_branch = util_funcs.tuple_append(song_no_nest, branch_no_nest)
+    assert branch_no_nest == ()
+    assert song_and_branch == song_no_nest
+
+
+def test_parse_matches_blacklist():
+    empty_score_expected_blacklist = (
+        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 19, 21, 24, 26, 27)
+    assert new_blacklist_empty == empty_score_expected_blacklist
+    assert new_blacklist_no_nest == no_nesting_blacklist
+
+
+def test_make_new_branch_call():
+    empty_score_test_1 = callchannel.make_new_branch_call(
+        empty_score_asm_scrubbed, 11, 26, 1)
+    assert empty_score_test_1[11] == '\tcallchannel Music_GBTemplate_Branch1\n'
+
+    empty_score_test_2 = callchannel.make_new_branch_call(
+        empty_score_asm_scrubbed, 32, 47, 1)
+    assert empty_score_test_2[32] == '\tcallchannel Music_GBTemplate_Branch1\n'
+
+
+def test_make_branch():
+    branch_1_contents = ('\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote __, 4\n')
+
+    branch_2_contents = ('\tstereopanning $f0\n',
+                         '\tnote A_, 4\n',
+                         '\tnote __, 4\n',
+                         '\tnote B_, 4\n',
+                         '\tnote __, 4\n',
+                         '\tstereopanning $0f\n')
+
+    formed_branch_1 = callchannel.make_branch(
+        empty_score_asm_scrubbed, 1, branch_1_contents)
+    assert formed_branch_1[0] == 'Music_GBTemplate_Branch1:\n'
+    assert formed_branch_1[-1] == '\tendchannel\n'
+    assert formed_branch_1[1:-1] == branch_1_contents
+
+    formed_branch_2 = callchannel.make_branch(
+        empty_score_asm_scrubbed, 2, branch_2_contents)
+    assert formed_branch_2[0] == 'Music_GBTemplate_Branch2:\n'
+    assert formed_branch_2[-1] == '\tendchannel\n'
+    assert formed_branch_2[1:-1] == branch_2_contents
+
+
+def test_range_in_blacklist():
+    assert callchannel.range_in_blacklist(
+        0, 2, no_nesting_blacklist) is True
+    assert callchannel.range_in_blacklist(
+        13, 3, no_nesting_blacklist) is False
+    assert callchannel.range_in_blacklist(
+        9, 0, no_nesting_blacklist) is False
+
+    assert callchannel.range_in_blacklist(
+        8, 1, empty_score_blacklist) is False
+    assert callchannel.range_in_blacklist(
+        11, 16, empty_score_blacklist) is False
+    assert callchannel.range_in_blacklist(
+        68, 2, empty_score_blacklist) is True
+
+
+def test_make_called_channel_blacklist():
+    empty_score_blacklist_called = callchannel.make_called_channel_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == ()
+
+    no_nesting_blacklist_called = callchannel.make_called_channel_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (12, 13, 14, 15, 16, 17)
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
