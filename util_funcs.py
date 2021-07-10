@@ -121,6 +121,12 @@ def get_root_command(raw_command):
     return command
 
 
+def scrub_song(song):
+    scrubbed_song = tuple(filter(filter_comments_space, song))
+    scrubbed_song = tuple(map(remove_inline_comment, scrubbed_song))
+    return scrubbed_song
+
+
 def calc_song_size(song):
     scrubbed_song = multi_filter(song, filter_out_label, filter_comments_space)
     command_bytes = multi_map(scrubbed_song,

@@ -4,8 +4,7 @@ import concurrent.futures
 from ast import Index
 
 from callchannel import optimize_callchannel
-from util_funcs import calc_song_size, filter_comments_space,\
-    remove_inline_comment
+from util_funcs import calc_song_size, scrub_song
 
 
 def main():
@@ -29,12 +28,6 @@ def main():
     print(f'{percent_saved_old:.2f}% of previous size')
     percent_diff = percent_saved_old - percent_saved_new
     print(f'\n{percent_diff:.2f}% smaller than old optimizations')
-
-
-def scrub_song(song):
-    scrubbed_song = tuple(filter(filter_comments_space, song))
-    scrubbed_song = tuple(map(remove_inline_comment, scrubbed_song))
-    return scrubbed_song
 
 
 def get_args():
