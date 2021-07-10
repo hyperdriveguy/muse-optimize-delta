@@ -9,15 +9,26 @@ from util_funcs import calc_song_size, filter_comments_space,\
 
 
 def main():
-    args = get_args()
-    input_file = read_file(args.asm)
+    # args = get_args()
+    # input_file = read_file(args.asm)
+    input_file = read_file('paradise.asm')
     if input_file == ():
         return
     scrubbed_song = scrub_song(input_file)
     pre_optimized_size = calc_song_size(scrubbed_song)
+    print('BEFORE:',pre_optimized_size)
     callchannel_optimized = optimize_callchannel(scrubbed_song)
-    for line in callchannel_optimized:
-        print(line)
+    post_optimized_size = calc_song_size(callchannel_optimized)
+    print('AFTER:', post_optimized_size)
+    percent_saved_new = (post_optimized_size / pre_optimized_size) * 100
+    print(f'{percent_saved_new:.2f}% of previous size')
+    old_optimized = read_file('paradise_optimized_v1.asm')
+    old_song_size = calc_song_size(old_optimized)
+    print('OLD:', old_song_size)
+    percent_saved_old = (old_song_size / pre_optimized_size) * 100
+    print(f'{percent_saved_old:.2f}% of previous size')
+    percent_diff = percent_saved_old - percent_saved_new
+    print(f'\n{percent_diff:.2f}% smaller than old optimizations')
 
 
 def scrub_song(song):
