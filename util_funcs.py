@@ -1,4 +1,7 @@
-def multi_map(iterable, *functions, keep_none=True):
+from functools import reduce
+
+
+def multi_map(iterable, *functions):
     mapped = iterable
     for function in functions:
         mapped = tuple(map(function, mapped))
