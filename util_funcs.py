@@ -45,6 +45,25 @@ def check_nested_tuples(iterable):
         raise ValueError('Arguments must be tuples')
 
 
+def flatten_tuple(nested_tuple):
+    """
+    Make a 2D tuple one dimensional.
+    The given tuple must only contain tuples.
+    """
+    base = ()
+    for tup in nested_tuple:
+        base = tuple_append(base, tup)
+    return base
+
+
+def remove_dup(iterable):
+    """
+    WARNING: Sets do not preserve order
+    Do not use on tuples that are index sensitive.
+    """
+    return tuple(set(iterable))
+
+
 def filter_out_label(line):
     clean_line = line.strip()
     try:
