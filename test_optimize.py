@@ -557,13 +557,6 @@ def test_parse_matches():
     assert song_and_branch == song_no_nest
 
 
-def test_parse_matches_blacklist():
-    empty_score_expected_blacklist = (
-        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 19, 21, 24, 26, 27)
-    assert new_blacklist_empty == empty_score_expected_blacklist
-    assert new_blacklist_no_nest == no_nesting_blacklist
-
-
 def test_make_new_branch_call():
     empty_score_test_1 = callchannel.make_new_branch_call(
         empty_score_asm_scrubbed, 11, 26, 1)
@@ -656,7 +649,24 @@ def test_make_label_blacklist():
     no_nesting_blacklist_called = callchannel.make_label_blacklist(
         no_nesting)
     assert no_nesting_blacklist_called == (0, 12)
-    
+
+
+def test_make_all_blacklists():
+    gen_empty_song_blacklist = callchannel.make_all_blacklists(
+        empty_score_asm_scrubbed)
+    assert gen_empty_song_blacklist == \
+        (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
+
+    gen_no_nest_blacklist = callchannel.make_all_blacklists(no_nesting)
+    assert gen_no_nest_blacklist == no_nesting_blacklist
+
+
+def test_parse_matches_blacklist():
+    assert new_blacklist_no_nest == no_nesting_blacklist
+    empty_score_expected_blacklist = (
+        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 17, 19, 21, 22, 24, 26, 27, 28)
+    assert new_blacklist_empty == empty_score_expected_blacklist
+
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
