@@ -638,4 +638,25 @@ def test_make_called_channel_blacklist():
     assert no_nesting_blacklist_called == (12, 13, 14, 15, 16, 17)
 
 
+def test_make_unoptimizable_blacklist():
+    empty_score_blacklist_called = callchannel.make_unoptimizable_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == (1, 2, 3, 4, 7, 71)
+
+    no_nesting_blacklist_called = callchannel.make_unoptimizable_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (2, 4, 6, 8, 10, 17)
+
+
+def test_make_label_blacklist():
+    empty_score_blacklist_called = callchannel.make_label_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == (0, 5, 10, 28, 31, 49, 51, 69, 72)
+
+    no_nesting_blacklist_called = callchannel.make_label_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (0, 12)
+    
+
+
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
