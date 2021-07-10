@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import pytest
-import museoptimize 
+import museoptimize
 import callchannel
+import util_funcs
 
 
 empty_score_asm = ('Music_GBTemplate:\n',
@@ -205,34 +206,223 @@ def test_song_scrub():
     assert museoptimize.scrub_song(empty_score_asm) == empty_score_asm_scrubbed
 
 
+def test_multi_map():
+
+    def make_string(item):
+        if type(item) != str:
+            return str(item)
+        return item
+
+    def make_int(item):
+        if type(item) != int:
+            return int(item)
+        return item
+
+    def add_a(item):
+        return item + 'a'
+
+    def add_one(item):
+        return item + 1
+
+    iterable_1 = (1, 2, 3, 4, 'a', 5, 6, 7, 'x')
+    iterable_2 = ('a', 'b', 'c', 1, 3, '3', '23')
+    iterable_3 = (454, '99', '33', 1, 3, '3', '23')
+    assert util_funcs.multi_map(iterable_1, make_string, add_a) == \
+        ('1a', '2a', '3a', '4a', 'aa', '5a', '6a', '7a', 'xa')
+    assert util_funcs.multi_map(iterable_2, make_string, add_a) == \
+        ('aa', 'ba', 'ca', '1a', '3a', '3a', '23a')
+    assert util_funcs.multi_map(iterable_3, make_int, add_one) == \
+        (455, 100, 34, 2, 4, 4, 24)
+
+
+def test_multi_filter():
+
+    def filter_string(item):
+        if type(item) == str:
+            return True
+        return False
+
+    def filter_int(item):
+        if type(item) == int:
+            return True
+        return False
+    
+    def filter_lt_four(item):
+        if item < 4:
+            return True
+        return False
+    
+    def filter_a(item):
+        if item == 'a':
+            return True
+        return False
+
+    iterable_1 = (1, 2, 3, 4, 'a', 5, 6, 7, 'x')
+    iterable_2 = ('a', 'b', 'c', 1, 3, '3', '23')
+    iterable_3 = (454, '99', '33', 1, 3, '3', '23')
+    assert util_funcs.multi_filter(iterable_1, filter_string, filter_a) == \
+        ('a',)
+    assert util_funcs.multi_filter(iterable_1, filter_int, filter_lt_four) == \
+        (1, 2, 3)
+    assert util_funcs.multi_filter(iterable_2, filter_string, filter_a) == \
+        ('a',)
+    assert util_funcs.multi_filter(iterable_2, filter_int, filter_lt_four) == \
+        (1, 3)
+    assert util_funcs.multi_filter(iterable_3, filter_string, filter_a) == \
+        ()
+    assert util_funcs.multi_filter(iterable_3, filter_int, filter_lt_four) == \
+        (1, 3)
+
+
+def test_tuple_append():
+    tuple_1 = ('a', 'b', 'c')
+    tuple_2 = ('d', 'e', 'f')
+    tuple_3 = (1, 2, 3)
+    tuple_4 = (4, 5, 6)
+
+    assert util_funcs.tuple_append(tuple_1, tuple_2) == \
+        ('a', 'b', 'c', 'd', 'e', 'f')
+    assert util_funcs.tuple_append(tuple_2, tuple_1) == \
+        ('d', 'e', 'f', 'a', 'b', 'c')
+    assert util_funcs.tuple_append(tuple_3, tuple_4) == (1, 2, 3, 4, 5, 6)
+    assert util_funcs.tuple_append(tuple_4, tuple_3) == (4, 5, 6, 1, 2, 3)
+
+    assert util_funcs.tuple_append(tuple_1, tuple_2, tuple_3) == \
+        ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3)
+    assert util_funcs.tuple_append(tuple_1, tuple_2, tuple_3, tuple_4) == \
+        ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3, 4, 5, 6)
+    assert util_funcs.tuple_append(tuple_1, tuple_2, tuple_3, tuple_4, tuple_4) == \
+        ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3, 4, 5, 6, 4, 5, 6)
+
+
+def test_nested_tuples():
+    good_tuple = (3, 4, 5, 6)
+    bad_tuple_1 = ((1,2,3), 4)
+    bad_tuple_2 = (1, (2, 3, 4))
+
+    try:
+        util_funcs.check_nested_tuples(good_tuple)
+    except ValueError:
+        assert False
+
+    try:
+        util_funcs.check_nested_tuples(bad_tuple_1)
+    except ValueError:
+        assert True
+
+    try:
+        util_funcs.check_nested_tuples(bad_tuple_2)
+    except ValueError:
+        assert True
+
 
 def test_filter_non_command_whitespace():
-    assert callchannel.filter_comments_space('\n') is False
-    assert callchannel.filter_comments_space('\t\n') is False
-    assert callchannel.filter_comments_space('\t \n') is False
-    assert callchannel.filter_comments_space('\t\t    \n') is False
+    assert util_funcs.filter_comments_space('\n') is False
+    assert util_funcs.filter_comments_space('\t\n') is False
+    assert util_funcs.filter_comments_space('\t \n') is False
+    assert util_funcs.filter_comments_space('\t\t    \n') is False
 
 
 def test_filter_non_command_labels():
-    assert callchannel.filter_out_label('Yeet:\n') is False
-    assert callchannel.filter_out_label('Yeetasdf:\n\n') is False
-    assert callchannel.filter_out_label('\tYeeter:\n') is False
+    assert util_funcs.filter_out_label('Yeet:\n') is False
+    assert util_funcs.filter_out_label('Yeetasdf:\n\n') is False
+    assert util_funcs.filter_out_label('\tYeeter:\n') is False
+    assert util_funcs.filter_labels('Yeet:\n') is True
+    assert util_funcs.filter_labels('Yeetasdf:\n\n') is True
+    assert util_funcs.filter_labels('\tYeeter:\n') is True
 
 
 def test_filter_non_command_comments():
-    assert callchannel.filter_comments_space('; This is a comment\n') is False
-    assert callchannel.filter_comments_space('\t; measure 14\n') is False
-    assert callchannel.filter_comments_space('; yeet') is False
-    assert callchannel.filter_comments_space(';norp') is False
+    assert util_funcs.filter_comments_space('; This is a comment\n') is False
+    assert util_funcs.filter_comments_space('\t; measure 14\n') is False
+    assert util_funcs.filter_comments_space('; yeet') is False
+    assert util_funcs.filter_comments_space(';norp') is False
 
 
 def test_filter_non_command_inline_comments():
-    assert callchannel.filter_out_label('\tBork: ; norp\n') is False
-    assert callchannel.filter_out_label('\tRee:;norp\n') is False
-    assert callchannel.filter_comments_space('\tBork: ; norp\n') is True
-    assert callchannel.filter_comments_space('\tRee:;norp\n') is True
-    assert callchannel.filter_comments_space('\tnote A_, 13 ;measure 233') is True
-    assert callchannel.filter_comments_space('\toctave 3 ;asdf\n') is True
+    assert util_funcs.filter_out_label('Bork: ; norp\n') is False
+    assert util_funcs.filter_out_label('\tRee:;norp\n') is False
+    assert util_funcs.filter_comments_space('\tBork: ; norp\n') is True
+    assert util_funcs.filter_comments_space('\tRee:;norp\n') is True
+    assert util_funcs.filter_comments_space('\tnote A_, 13 ;m 23') is True
+    assert util_funcs.filter_comments_space('\toctave 3 ;asdf\n') is True
+
+
+def test_get_song_name():
+    test_song_1 = ('Music_Yeet:\n',)
+    test_song_2 = ('Yeet:\n', '\tnote A_, 4')
+
+    assert util_funcs.get_song_name(empty_score_asm) == 'Music_GBTemplate'
+    assert util_funcs.get_song_name(empty_score_asm_scrubbed) == \
+        'Music_GBTemplate'
+    assert util_funcs.get_song_name(test_song_1) == 'Music_Yeet'
+    assert util_funcs.get_song_name(test_song_2) == 'Yeet'
+
+
+def test_remove_inline_comment():
+    assert util_funcs.remove_inline_comment('Bork: ; norp\n') == \
+        'Bork:\n'
+    assert util_funcs.remove_inline_comment('\tRee:;norp\n') == \
+        '\tRee:\n'
+    assert util_funcs.remove_inline_comment('\tBork: ; norp\n') == \
+        '\tBork:\n'
+    assert util_funcs.remove_inline_comment('\tRee:;norp\n') == \
+        '\tRee:\n'
+    assert util_funcs.remove_inline_comment('\tnote A_, 13 ;m 23') == \
+        '\tnote A_, 13\n'
+    assert util_funcs.remove_inline_comment('\toctave 3 ;asdf\n') == \
+        '\toctave 3\n'
+
+
+def test_get_root_command():
+    assert util_funcs.get_root_command('\tnote A_, 13 ;m 23') == \
+        'note'
+    assert util_funcs.get_root_command('\tnote A_, 13\n') == \
+        'note'
+    musicheader = '\tmusicheader 1, 4, Music_GBTemplate_Ch4\n'
+    assert util_funcs.get_root_command(musicheader) == \
+        'musicheader'
+    del musicheader
+    assert util_funcs.get_root_command('\ttempo 640\n') == \
+        'tempo'
+    assert util_funcs.get_root_command('\tdutycycle $2\n') == \
+        'dutycycle'
+    assert util_funcs.get_root_command('Music_GBTemplate_Ch1_Loop:\n') == \
+        'Music_GBTemplate_Ch1_Loop:'
+
+
+def test_calc_song_size():
+    test_window = ('\tcallchannel yeet\n', '\tnote __, 1\n', 'endchannel')
+    test_unscrubbed_window = ('\tcallchannel yeet\n', '\n', 'endchannel')
+
+    assert util_funcs.calc_song_size(empty_score_asm) == 108
+    assert util_funcs.calc_song_size(empty_score_asm_scrubbed) == 108
+    assert util_funcs.calc_song_size(test_window) == 5
+    assert util_funcs.calc_song_size(test_unscrubbed_window) == 4
+
+
+def test_get_command_size():
+    assert util_funcs.get_command_size('note') == 1
+    assert util_funcs.get_command_size('octave') == 1
+    assert util_funcs.get_command_size('notetype_1') == 2
+    assert util_funcs.get_command_size('notetype_2') == 3
+    assert util_funcs.get_command_size('dutycycle') == 2
+    assert util_funcs.get_command_size('intensity') == 2
+    assert util_funcs.get_command_size('tempo') == 3
+    assert util_funcs.get_command_size('tone') == 2
+    assert util_funcs.get_command_size('stereopanning') == 2
+    assert util_funcs.get_command_size('vibrato') == 3
+    assert util_funcs.get_command_size('slidepitchto') == 3
+    assert util_funcs.get_command_size('transpose') == 2
+    assert util_funcs.get_command_size('jumpchannel') == 3
+    assert util_funcs.get_command_size('callchannel') == 3
+    assert util_funcs.get_command_size('loopchannel') == 4
+    assert util_funcs.get_command_size('endchannel') == 1
+    assert util_funcs.get_command_size('jumpif') == 4
+    assert util_funcs.get_command_size('setcondition') == 2
+    assert util_funcs.get_command_size('togglenoise') == 2
+    assert util_funcs.get_command_size('volume') == 2
+    assert util_funcs.get_command_size('musicheader') == 3
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
