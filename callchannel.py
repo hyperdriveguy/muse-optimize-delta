@@ -85,9 +85,8 @@ def calc_callchannel_savings(song_subset, matches):
 
 
 def parse_matches(song, start_index, lookahead, blacklist, branch):
-    branch_name = f'{util_funcs.get_song_name(song)}_Branch{branch}'
     window = song[start_index:start_index + lookahead + 1]
-    called_branch = make_branch(branch_name, window)
+    called_branch = make_branch(song, branch, window)
     # A while loop is used due to steps needing to vary
     cur_index = start_index
     while cur_index < len(song) - lookahead:
@@ -99,14 +98,15 @@ def parse_matches(song, start_index, lookahead, blacklist, branch):
             song = make_new_branch_call(song,
                                         cur_index,
                                         cur_index + lookahead,
-                                        branch_name)
+                                        branch)
             # Rebuild blacklist
             blacklist = make_all_blacklists(song)
         cur_index += 1
     return (song, called_branch, blacklist)
 
 
-def make_new_branch_call(song, begin_index, end_index, branch_name):
+def make_new_branch_call(song, begin_index, end_index, branch):
+    branch_name = f'{util_funcs.get_song_name(song)}_Branch{branch}'
     song_pre = song[:begin_index]
     song_post = song[end_index + 1:]
     callchannel = (f'\tcallchannel {branch_name}\n',)
@@ -114,8 +114,9 @@ def make_new_branch_call(song, begin_index, end_index, branch_name):
     return util_funcs.tuple_append(song_pre, callchannel, song_post)
 
 
-def make_branch(name, contents):
-    label = (name + ':\n',)
+def make_branch(song, branch, contents):
+    branch_name = f'{util_funcs.get_song_name(song)}_Branch{branch}'
+    label = (branch_name + ':\n',)
     endchannel = ('\tendchannel\n',)
     return util_funcs.tuple_append(label, contents, endchannel)
 
@@ -131,13 +132,17 @@ def make_called_channel_blacklist(song):
 
     def build_callchannel_range(label):
         start_bad = None
+        end_bad = None
         for index in range(len(song)):
             if song[index] == label:
                 start_bad = index
-            elif start_bad is not None and song[index] == 'endchannel':
+            elif start_bad is not None and song[index] == '\tendchannel\n':
                 end_bad = index
         if start_bad is None:
             raise IndexError(f'Called branch {label} was not found in song')
+        if end_bad is None:
+            raise IndexError(f'Called branch {label} '
+                             'has no matching endchannel')
         return tuple(range(start_bad, end_bad + 1))
 
     def filter_label_exists(line):
@@ -154,16 +159,21 @@ def make_called_channel_blacklist(song):
 
     called_channels = tuple(filter(filter_callchannel, song))
     called_branch_label = tuple(map(format_channel_label, called_channels))
-    existing_labels = tuple(filter(filter_label_exists, called_branch_label))
+    existing_labels = util_funcs.remove_dup(
+        tuple(filter(filter_label_exists, called_branch_label)))
     blacklisted_indexes = tuple(map(build_callchannel_range, existing_labels))
 
-    return blacklisted_indexes
+    return util_funcs.flatten_tuple(blacklisted_indexes)
 
 
 def make_unoptimizable_blacklist(song):
 
     def filter_unoptimizable(line):
-        unoptimizable = ('callchannel', 'musicheader', 'endchannel', 'volume', 'togglenoise')
+        unoptimizable = ('callchannel',
+                         'musicheader',
+                         'endchannel',
+                         'volume',
+                         'togglenoise')
         if util_funcs.get_root_command(line) in unoptimizable:
             return True
         return False
@@ -174,7 +184,8 @@ def make_unoptimizable_blacklist(song):
                 return index
 
     filtered_unoptimizable = tuple(filter(filter_unoptimizable, song))
-    blacklisted_indexes = tuple(map(unoptimizable_indexes, filtered_unoptimizable))
+    blacklisted_indexes = tuple(map(
+        unoptimizable_indexes, filtered_unoptimizable))
 
     return blacklisted_indexes
 
@@ -196,6 +207,7 @@ def make_all_blacklists(song):
     callchannel_bl = make_called_channel_blacklist(song)
     label_bl = make_label_blacklist(song)
     unoptimizable_bl = make_unoptimizable_blacklist(song)
-    full_bl = util_funcs.tuple_append(callchannel_bl, label_bl, unoptimizable_bl)
+    full_bl = util_funcs.tuple_append(
+        callchannel_bl, label_bl, unoptimizable_bl)
     sorted_bl = tuple(sorted(full_bl))
     return sorted_bl
