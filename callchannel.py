@@ -144,8 +144,10 @@ def make_called_channel_blacklist(song):
 
     called_channels = tuple(filter(filter_callchannel, song))
     called_branch_label = tuple(map(format_channel_label, called_channels))
+    del called_channels
     existing_labels = util_funcs.remove_dup(
         tuple(filter(filter_label_exists, called_branch_label)))
+    del called_branch_label
 
     return build_callchannel_range(existing_labels, song)
 
@@ -193,7 +195,9 @@ def make_unoptimizable_blacklist(song):
     filtered_unoptimizable = tuple(filter(filter_unoptimizable, song))
     occurences = tuple(map(
         unoptimizable_indexes, filtered_unoptimizable))
+    del filtered_unoptimizable
     blacklist = util_funcs.remove_dup(util_funcs.flatten_tuple(occurences))
+    del occurences
 
     return blacklist
 
@@ -207,6 +211,7 @@ def make_label_blacklist(song):
 
     filtered_labels = tuple(filter(util_funcs.filter_labels, song))
     blacklisted_indexes = tuple(map(unoptimizable_indexes, filtered_labels))
+    del filtered_labels
 
     return blacklisted_indexes
 
