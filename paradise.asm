@@ -1,11 +1,11 @@
-Music_Paradise-Coldplay:
-	musicheader 4, 1, Music_Paradise-Coldplay_Ch1
-	musicheader 1, 2, Music_Paradise-Coldplay_Ch2
-	musicheader 1, 3, Music_Paradise-Coldplay_Ch3
-	musicheader 1, 4, Music_Paradise-Coldplay_Ch4
+Music_Paradise_Coldplay:
+	musicheader 4, 1, Music_Paradise_Coldplay_Ch1
+	musicheader 1, 2, Music_Paradise_Coldplay_Ch2
+	musicheader 1, 3, Music_Paradise_Coldplay_Ch3
+	musicheader 1, 4, Music_Paradise_Coldplay_Ch4
 
 
-Music_Paradise-Coldplay_Ch1:
+Music_Paradise_Coldplay_Ch1:
 	tempo 274
 	volume $77
 	notetype $c, $9f
@@ -90,7 +90,7 @@ Music_Paradise-Coldplay_Ch1:
 	note E_, 3
 	note A_, 1
 
-Music_Paradise-Coldplay_Ch1_Loop:
+Music_Paradise_Coldplay_Ch1_Loop:
 	intensity $87
 	stereopanning $ff
 	note A_, 1
@@ -446,10 +446,10 @@ Music_Paradise-Coldplay_Ch1_Loop:
 	note A_, 6
 	octave 3
 	note E_, 10
-	jumpchannel Music_Paradise-Coldplay_Ch1_Loop
+	jumpchannel Music_Paradise_Coldplay_Ch1_Loop
 
 
-Music_Paradise-Coldplay_Ch2:
+Music_Paradise_Coldplay_Ch2:
 	notetype $c, $9f
 	dutycycle $0
 	octave 3
@@ -613,7 +613,7 @@ Music_Paradise-Coldplay_Ch2:
 	note D_, 1
 	note C_, 4
 
-Music_Paradise-Coldplay_Ch2_Loop:
+Music_Paradise_Coldplay_Ch2_Loop:
 	dutycycle $0
 	stereopanning $f0
 	intensity $b7
@@ -1052,10 +1052,10 @@ Music_Paradise-Coldplay_Ch2_Loop:
 	note E_, 1
 	note D_, 1
 	note C_, 4
-	jumpchannel Music_Paradise-Coldplay_Ch2_Loop
+	jumpchannel Music_Paradise_Coldplay_Ch2_Loop
 
 
-Music_Paradise-Coldplay_Ch3:
+Music_Paradise_Coldplay_Ch3:
 	notetype $c, $16
 	stereopanning $0f
 	octave 2
@@ -1228,7 +1228,7 @@ Music_Paradise-Coldplay_Ch3:
 	note C_, 2
 	note C_, 2
 
-Music_Paradise-Coldplay_Ch3_Loop:
+Music_Paradise_Coldplay_Ch3_Loop:
 	stereopanning $0f
 	note D_, 2
 	note A_, 4
@@ -1614,10 +1614,10 @@ Music_Paradise-Coldplay_Ch3_Loop:
 	note E_, 3
 	note __, 1
 	note E_, 6
-	jumpchannel Music_Paradise-Coldplay_Ch3_Loop
+	jumpchannel Music_Paradise_Coldplay_Ch3_Loop
 
 
-Music_Paradise-Coldplay_Ch4:
+Music_Paradise_Coldplay_Ch4:
 	notetype $c
 	togglenoise 0
 	note __, 16
@@ -1827,7 +1827,7 @@ Music_Paradise-Coldplay_Ch4:
 	note C_, 1
 	note G_, 1
 
-Music_Paradise-Coldplay_Ch4_Loop:
+Music_Paradise_Coldplay_Ch4_Loop:
 	note __, 16
 	note __, 16
 	note __, 16
@@ -2247,6 +2247,6 @@ Music_Paradise-Coldplay_Ch4_Loop:
 	note C_, 4
 	note F_, 2
 	note F_, 1
-	jumpchannel Music_Paradise-Coldplay_Ch4_Loop
+	jumpchannel Music_Paradise_Coldplay_Ch4_Loop
 
 
