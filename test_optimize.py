@@ -265,7 +265,7 @@ no_nesting = ('Yeet:\n',
               '\tendchannel\n')
 
 
-no_nesting_blacklist = (0, 2, 4, 6, 8, 10, 12, 17)
+no_nesting_blacklist = (0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 17)
 empty_score_blacklist = (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
 
 
@@ -609,7 +609,7 @@ def test_range_in_blacklist():
     assert callchannel.range_in_blacklist(
         0, 2, no_nesting_blacklist) is True
     assert callchannel.range_in_blacklist(
-        13, 3, no_nesting_blacklist) is False
+        13, 3, no_nesting_blacklist) is True
     assert callchannel.range_in_blacklist(
         9, 0, no_nesting_blacklist) is False
 
