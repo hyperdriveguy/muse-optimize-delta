@@ -197,6 +197,77 @@ empty_score_asm_scrubbed = ('Music_GBTemplate:\n',
                             '\tnote __, 4\n',
                             '\tjumpchannel Music_GBTemplate_Ch4_Loop\n')
 
+empty_score_asm_optimized = ('Music_GBTemplate:\n',
+                             '\tmusicheader 4, 1, Music_GBTemplate_Ch1\n',
+                             '\tmusicheader 1, 2, Music_GBTemplate_Ch2\n',
+                             '\tmusicheader 1, 3, Music_GBTemplate_Ch3\n',
+                             '\tmusicheader 1, 4, Music_GBTemplate_Ch4\n',
+                             'Music_GBTemplate_Ch1:\n',
+                             '\ttempo 640\n',
+                             '\tvolume $77\n',
+                             '\tnotetype $c, $95\n',
+                             '\tdutycycle $2\n',
+                             'Music_GBTemplate_Ch1_Loop:\n',
+                             '\tcallchannel Music_GBTemplate_Branch1\n',
+                             '\tjumpchannel Music_GBTemplate_Ch1_Loop\n',
+                             'Music_GBTemplate_Ch2:\n',
+                             '\tnotetype $c, $95\n',
+                             '\tdutycycle $2\n',
+                             'Music_GBTemplate_Ch2_Loop:\n',
+                             '\tcallchannel Music_GBTemplate_Branch1\n',
+                             '\tjumpchannel Music_GBTemplate_Ch2_Loop\n',
+                             'Music_GBTemplate_Ch3:\n',
+                             '\tnotetype $c, $15\n',
+                             'Music_GBTemplate_Ch3_Loop:\n',
+                             '\tcallchannel Music_GBTemplate_Branch1\n',
+                             '\tjumpchannel Music_GBTemplate_Ch3_Loop\n',
+                             'Music_GBTemplate_Ch4:\n',
+                             '\tnotetype $c\n',
+                             '\ttogglenoise 1\n',
+                             'Music_GBTemplate_Ch4_Loop:\n',
+                             '\tcallchannel Music_GBTemplate_Branch1\n',
+                             '\tjumpchannel Music_GBTemplate_Ch4_Loop\n',
+                             'Music_GBTemplate_Branch1:\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tnote __, 4\n',
+                             '\tendchannel\n')
+no_nesting = ('Yeet:\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tjumpchannel Yeet\n'
+              'yote:\n',
+              '\tnote A_, 2\n',
+              '\tnote B_, 2\n',
+              '\tnote C_, 2\n',
+              '\tnote D_, 2\n',
+              '\tendchannel\n')
+
+
+no_nesting_blacklist = (0, 2, 4, 6, 8, 10, 12, 17)
+empty_score_blacklist = (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
+
 
 def test_read_file():
     assert museoptimize.read_file('empty_score.asm') == empty_score_asm
@@ -246,12 +317,12 @@ def test_multi_filter():
         if type(item) == int:
             return True
         return False
-    
+
     def filter_lt_four(item):
         if item < 4:
             return True
         return False
-    
+
     def filter_a(item):
         if item == 'a':
             return True
@@ -291,13 +362,14 @@ def test_tuple_append():
         ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3)
     assert util_funcs.tuple_append(tuple_1, tuple_2, tuple_3, tuple_4) == \
         ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3, 4, 5, 6)
-    assert util_funcs.tuple_append(tuple_1, tuple_2, tuple_3, tuple_4, tuple_4) == \
+    assert util_funcs.tuple_append(
+        tuple_1, tuple_2, tuple_3, tuple_4, tuple_4) == \
         ('a', 'b', 'c', 'd', 'e', 'f', 1, 2, 3, 4, 5, 6, 4, 5, 6)
 
 
 def test_nested_tuples():
     good_tuple = (3, 4, 5, 6)
-    bad_tuple_1 = ((1,2,3), 4)
+    bad_tuple_1 = ((1, 2, 3), 4)
     bad_tuple_2 = (1, (2, 3, 4))
 
     try:
@@ -423,6 +495,61 @@ def test_get_command_size():
     assert util_funcs.get_command_size('togglenoise') == 2
     assert util_funcs.get_command_size('volume') == 2
     assert util_funcs.get_command_size('musicheader') == 3
+
+
+def test_optimize_callchannel():
+    assert callchannel.optimize_callchannel(empty_score_asm_scrubbed) == \
+        empty_score_asm_optimized
+
+    called_optimum = callchannel.optimize_callchannel(no_nesting)
+    assert called_optimum == no_nesting
+
+
+def test_build_ideal_lookahead():
+    for index in range(len(no_nesting)):
+        no_nest_la = callchannel.build_ideal_lookahead(
+            no_nesting, index, no_nesting_blacklist)
+        assert no_nest_la == 0
+
+    empty_score_la = callchannel.build_ideal_lookahead(
+        empty_score_asm_scrubbed, 11, empty_score_blacklist)
+    assert empty_score_la == 15
+
+
+def test_calc_callchannel_savings():
+    subset_1 = ('\tnote A_, 2\n',
+                '\tnote B_, 2\n',
+                '\tnote C_, 2\n',
+                '\tnote D_, 2\n')
+
+    subset_2 = ('\tnote A_, 2\n',
+                '\tnote B_, 2\n',
+                '\tnote C_, 2\n',
+                '\tnote B_, 2\n',
+                '\tnote C_, 2\n',
+                '\tnote D_, 2\n')
+
+    subset_3 = ('\tstereopanning $f0\n',
+                '\tnote B_, 2\n',
+                '\tnote C_, 2\n',
+                '\ttempo 400',
+                '\tnote C_, 2\n',
+                '\tnote D_, 2\n')
+
+    callchannel.calc_callchannel_savings(subset_2, 8)
+
+    assert callchannel.calc_callchannel_savings(subset_1, 4) == 1
+    assert callchannel.calc_callchannel_savings(subset_2, 8) == 19
+    assert callchannel.calc_callchannel_savings(subset_3, 12) == 64
+
+
+def test_parse_matches():
+    expected_new_blacklist = (
+        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 19, 21, 24, 26, 27)
+    parsed_empty_score = callchannel.parse_matches(
+        empty_score_asm_scrubbed, 11, 15, empty_score_blacklist, 1)
+    song, branch, new_blacklist = parsed_empty_score
+    assert util_funcs.tuple_append(song, branch) == empty_score_asm_optimized
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
