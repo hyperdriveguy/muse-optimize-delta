@@ -217,5 +217,11 @@ def make_all_blacklists(song):
     unoptimizable_bl = make_unoptimizable_blacklist(song)
     full_bl = util_funcs.tuple_append(
         callchannel_bl, label_bl, unoptimizable_bl)
-    sorted_bl = tuple(sorted(full_bl))
+    del callchannel_bl
+    del label_bl
+    del unoptimizable_bl
+    del_redundant_bl = util_funcs.remove_dup(full_bl)
+    del full_bl
+    sorted_bl = tuple(sorted(del_redundant_bl))
+    del del_redundant_bl
     return sorted_bl
