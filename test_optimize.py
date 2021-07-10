@@ -654,8 +654,7 @@ def test_make_label_blacklist():
 def test_make_all_blacklists():
     gen_empty_song_blacklist = callchannel.make_all_blacklists(
         empty_score_asm_scrubbed)
-    assert gen_empty_song_blacklist == \
-        (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
+    assert gen_empty_song_blacklist == empty_score_blacklist
 
     gen_no_nest_blacklist = callchannel.make_all_blacklists(no_nesting)
     assert gen_no_nest_blacklist == no_nesting_blacklist
