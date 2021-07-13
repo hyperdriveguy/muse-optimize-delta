@@ -1,6 +1,8 @@
 from functools import reduce
 
 
+# Functions for working with tuples
+
 def multi_map(iterable, *functions):
     mapped = iterable
     for function in functions:
@@ -64,6 +66,9 @@ def remove_dup(iterable):
     return tuple(set(iterable))
 
 
+# Filter functions
+
+
 def filter_out_label(line):
     clean_line = line.strip()
     try:
@@ -97,10 +102,7 @@ def filter_comments_space(line):
     return True
 
 
-def get_song_name(song):
-    song_labels = tuple(filter(filter_labels, song))
-    # Base the song name off the first label found
-    return song_labels[0][:-2]
+# Command processing
 
 
 def remove_inline_comment(line):
@@ -119,6 +121,15 @@ def get_root_command(raw_command):
             return 'notetype_2'
 
     return command
+
+
+# Song attributes
+
+
+def get_song_name(song):
+    song_labels = tuple(filter(filter_labels, song))
+    # Base the song name off the first label found
+    return song_labels[0][:-2]
 
 
 def scrub_song(song):
@@ -166,3 +177,123 @@ def get_command_size(root_command):
         bytesize = 1
 
     return bytesize
+
+
+    # Blacklists
+
+
+def make_called_channel_blacklist(song):
+
+    def filter_label_exists(line):
+        if line in song:
+            return True
+        return False
+
+    def filter_callchannel(line):
+        if get_root_command(line) == 'callchannel':
+            return True
+        return False
+
+    format_channel_label = lambda line: line.split(' ')[1].strip() + ':\n'
+
+    called_channels = tuple(filter(filter_callchannel, song))
+    called_branch_label = tuple(map(format_channel_label, called_channels))
+    del called_channels
+    existing_labels = remove_dup(
+        tuple(filter(filter_label_exists, called_branch_label)))
+    del called_branch_label
+
+    return build_callchannel_range(existing_labels, song)
+
+
+def build_callchannel_range(labels, song):
+
+    def get_range(label):
+        start_bad = None
+        end_bad = None
+        for index in range(len(song)):
+            if song[index] == label:
+                start_bad = index
+            elif start_bad is not None and song[index] == '\tendchannel\n':
+                end_bad = index
+        if start_bad is None:
+            raise IndexError(f'Called branch {label} was not found in song')
+        if end_bad is None:
+            raise IndexError(f'Called branch {label} '
+                                'has no matching endchannel')
+        return tuple(range(start_bad, end_bad + 1))
+
+    blacklisted_indexes = tuple(map(get_range, labels))
+    return flatten_tuple(blacklisted_indexes)
+
+
+def make_unoptimizable_blacklist(song, include_callchannel=True):
+
+    def filter_unoptimizable(line):
+        if include_callchannel:
+            unoptimizable = ('callchannel',
+                            'musicheader',
+                            'endchannel',
+                            'volume',
+                            'togglenoise')
+        else:
+            unoptimizable = ('musicheader',
+                            'endchannel',
+                            'volume',
+                            'togglenoise')
+        if get_root_command(line) in unoptimizable:
+            return True
+        return False
+
+    def unoptimizable_indexes(line):
+        found_indexes = ()
+        for index in range(len(song)):
+            if song[index] == line:
+                found_indexes = tuple_append(found_indexes, (index,))
+        return found_indexes
+
+    filtered_unoptimizable = tuple(filter(filter_unoptimizable, song))
+    occurences = tuple(map(
+        unoptimizable_indexes, filtered_unoptimizable))
+    del filtered_unoptimizable
+    blacklist = remove_dup(flatten_tuple(occurences))
+    del occurences
+
+    return blacklist
+
+
+def make_label_blacklist(song):
+
+    def unoptimizable_indexes(line):
+        for index in range(len(song)):
+            if song[index] == line:
+                return index
+
+    filtered_labels = tuple(filter(filter_labels, song))
+    blacklisted_indexes = tuple(map(unoptimizable_indexes, filtered_labels))
+    del filtered_labels
+
+    return blacklisted_indexes
+
+
+def make_callchannel_blacklists(song):
+    callchannel_bl = make_called_channel_blacklist(song)
+    label_bl = make_label_blacklist(song)
+    unoptimizable_bl = make_unoptimizable_blacklist(song)
+    full_bl = tuple_append(
+        callchannel_bl, label_bl, unoptimizable_bl)
+    del callchannel_bl
+    del label_bl
+    del unoptimizable_bl
+    del_redundant_bl = remove_dup(full_bl)
+    del full_bl
+    sorted_bl = tuple(sorted(del_redundant_bl))
+    del del_redundant_bl
+    return sorted_bl
+
+
+def range_in_blacklist(start, lookahead, blacklist):
+    for index in range(start, start + lookahead + 1):
+        if index in blacklist:
+            return True
+    return False
