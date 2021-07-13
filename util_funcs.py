@@ -206,6 +206,36 @@ def make_called_channel_blacklist(song):
     return build_callchannel_range(existing_labels, song)
 
 
+def make_looped_channel_blacklist(song):
+
+    def filter_label_exists(line):
+        if line in song:
+            return True
+        return False
+
+    def filter_loopchannel(line):
+        if get_root_command(line) == 'loopchannel':
+            return True
+        return False
+    
+    def build_loopchannel_range(label, loop):
+        # song.index is used because each label should only have one pair
+        begin_index = song.index(label)
+        end_index = song.index(loop)
+        return tuple(range(begin_index, end_index + 1))
+
+    format_channel_label = lambda line: line.split(' ')[1].strip() + ':\n'
+
+    loop_channels = tuple(filter(filter_loopchannel, song))
+    looped_branch_label = tuple(map(format_channel_label, loop_channels))
+    existing_labels = tuple(filter(filter_label_exists, looped_branch_label))
+    del looped_branch_label
+
+    blacklisted_indexes = tuple(map(build_loopchannel_range, looped_branch_label, loop_channels))
+
+    return flatten_tuple(blacklisted_indexes)
+
+
 def build_callchannel_range(labels, song):
 
     def get_range(label):
