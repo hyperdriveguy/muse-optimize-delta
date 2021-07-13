@@ -53,15 +53,11 @@ def read_file(filename):
     return ()
 
 
-def writelines(input_file, iterable):
-    for line in iterable:
-        input_file.write(line)
-
-
 def write_file(filename, file_contents):
     try:
         with open(filename, 'w') as input_file:
-            writelines(input_file, file_contents)
+            for line in file_contents:
+                input_file.write(line)
     except PermissionError:
         print(f'No permission to write file "{filename}".')
 
