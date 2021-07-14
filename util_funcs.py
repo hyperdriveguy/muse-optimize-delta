@@ -179,7 +179,7 @@ def get_command_size(root_command):
     return bytesize
 
 
-    # Blacklists
+# Blacklists
 
 
 def make_called_channel_blacklist(song):
@@ -204,6 +204,27 @@ def make_called_channel_blacklist(song):
     del called_branch_label
 
     return build_callchannel_range(existing_labels, song)
+
+
+def build_callchannel_range(labels, song):
+
+    def get_range(label):
+        start_bad = None
+        end_bad = None
+        for index in range(len(song)):
+            if song[index] == label:
+                start_bad = index
+            elif start_bad is not None and song[index] == '\tendchannel\n':
+                end_bad = index
+        if start_bad is None:
+            raise IndexError(f'Called branch {label} was not found in song')
+        if end_bad is None:
+            raise IndexError(f'Called branch {label} '
+                                'has no matching endchannel')
+        return tuple(range(start_bad, end_bad + 1))
+
+    blacklisted_indexes = tuple(map(get_range, labels))
+    return flatten_tuple(blacklisted_indexes)
 
 
 def make_looped_channel_blacklist(song):
@@ -231,29 +252,8 @@ def make_looped_channel_blacklist(song):
     existing_labels = tuple(filter(filter_label_exists, looped_branch_label))
     del looped_branch_label
 
-    blacklisted_indexes = tuple(map(build_loopchannel_range, looped_branch_label, loop_channels))
+    blacklisted_indexes = tuple(map(build_loopchannel_range, existing_labels, loop_channels))
 
-    return flatten_tuple(blacklisted_indexes)
-
-
-def build_callchannel_range(labels, song):
-
-    def get_range(label):
-        start_bad = None
-        end_bad = None
-        for index in range(len(song)):
-            if song[index] == label:
-                start_bad = index
-            elif start_bad is not None and song[index] == '\tendchannel\n':
-                end_bad = index
-        if start_bad is None:
-            raise IndexError(f'Called branch {label} was not found in song')
-        if end_bad is None:
-            raise IndexError(f'Called branch {label} '
-                                'has no matching endchannel')
-        return tuple(range(start_bad, end_bad + 1))
-
-    blacklisted_indexes = tuple(map(get_range, labels))
     return flatten_tuple(blacklisted_indexes)
 
 
@@ -313,6 +313,22 @@ def make_callchannel_blacklists(song):
     full_bl = tuple_append(
         callchannel_bl, label_bl, unoptimizable_bl)
     del callchannel_bl
+    del label_bl
+    del unoptimizable_bl
+    del_redundant_bl = remove_dup(full_bl)
+    del full_bl
+    sorted_bl = tuple(sorted(del_redundant_bl))
+    del del_redundant_bl
+    return sorted_bl
+
+
+def make_loopchannel_blacklists(song):
+    loopchannel_bl = make_looped_channel_blacklist(song)
+    label_bl = make_label_blacklist(song)
+    unoptimizable_bl = make_unoptimizable_blacklist(song)
+    full_bl = tuple_append(
+        loopchannel_bl, label_bl, unoptimizable_bl)
+    del loopchannel_bl
     del label_bl
     del unoptimizable_bl
     del_redundant_bl = remove_dup(full_bl)
