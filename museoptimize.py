@@ -6,15 +6,14 @@ from util_funcs import scrub_song
 
 
 def main():
-    # args = get_args()
-    # input_file = read_file(args.asm)
-    input_file = read_file('paradise.asm')
+    args = get_args()
+    input_file = read_file(args.asm)
     if input_file == ():
         return
     scrubbed_song = scrub_song(input_file)
     optimized_song, orignal_size, optimum_size = run_optimization_passes(scrubbed_song)
     print(format_size_diff(orignal_size, optimum_size))
-    write_file('paradise_new_optimum', optimized_song)
+    write_file(args.output, optimized_song)
 
 
 def get_args():
@@ -23,6 +22,7 @@ def get_args():
                     'music scripts.')
     parser.add_argument('asm', help='script input file')
     parser.add_argument('output', help='optimized output file')
+    parser.add_argument('-m', '--mono', help='remove stereopanning')
     return parser.parse_args()
 
 
@@ -50,9 +50,9 @@ def write_file(filename, file_contents):
 
 def format_size_diff(old_size, new_size):
     old_size_format = f'Before optimization: {old_size}\n'
-    new_size_format = f'After optimzation: {new_size}\n'
+    new_size_format = f'After optimization: {new_size}\n'
     percent_diff = (new_size / old_size) * 100
-    percent_diff_format = f'{percent_diff:.2f}% smaller than orignal size'
+    percent_diff_format = f'{percent_diff:.2f}% of original size'
     return old_size_format + new_size_format + percent_diff_format
 
 
