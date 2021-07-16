@@ -245,7 +245,7 @@ def make_looped_channel_blacklist(song):
         end_index = song.index(loop)
         return tuple(range(begin_index, end_index + 1))
 
-    format_channel_label = lambda line: line.split(' ')[1].strip() + ':\n'
+    format_channel_label = lambda line: line.split(' ')[-1].strip() + ':\n'
 
     loop_channels = tuple(filter(filter_loopchannel, song))
     looped_branch_label = tuple(map(format_channel_label, loop_channels))
