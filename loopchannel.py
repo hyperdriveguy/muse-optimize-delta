@@ -1,7 +1,7 @@
 import util_funcs
 
 
-def optimize_loopchannel(song):
+def optimize_loopchannel(song, inside_called=True):
     """
     Reduces redundant commands that appear all in a row.
 
@@ -9,7 +9,7 @@ def optimize_loopchannel(song):
     A called branch can have a loop or a loop can have a channel call it it,
     but there can never be a looped channel > called channel > looped channel.
     """
-    index_blacklist = util_funcs.make_loopchannel_blacklists(song)
+    index_blacklist = util_funcs.make_loopchannel_blacklists(song, inside_calls=inside_called)
 
     file_index = 0
     cur_loop = 1
@@ -24,7 +24,7 @@ def optimize_loopchannel(song):
             continue
 
         song = insert_loops(song, file_index, lookahead, redundancy, cur_loop)
-        index_blacklist = util_funcs.make_loopchannel_blacklists(song)
+        index_blacklist = util_funcs.make_loopchannel_blacklists(song, inside_calls=inside_called)
         file_index += 1
         cur_loop += 1
     return song
@@ -61,7 +61,7 @@ def build_ideal_lookahead(song, start_index, blacklist):
                 break
         return num_matches
 
-    while not found_ideal_lookahead:
+    while not found_ideal_lookahead and start_index + lookahead < len(song) - 1:
         if not util_funcs.range_in_blacklist(start_index, lookahead, blacklist):
             window = song[start_index:start_index + lookahead + 1]
             matches = calc_matches_in_window()
@@ -71,8 +71,6 @@ def build_ideal_lookahead(song, start_index, blacklist):
                 prev_size_savings = cur_savings
                 ideal_lookahead = lookahead
                 ideal_matches = matches
-            if matches == 1:
-                found_ideal_lookahead = True
             lookahead += 1
         else:
             found_ideal_lookahead = True
@@ -83,7 +81,7 @@ def insert_loops(song, start_index, lookahead, loop_times, loop_num):
     window = song[start_index:start_index + lookahead + 1]
     gen_loop = format_loop(song, window, loop_times, loop_num)
     begin_song = song[:start_index]
-    end_index = (len(window) * loop_times) + lookahead + start_index + 1
+    end_index = (len(window) * loop_times) + start_index
     end_song = song[end_index:]
     return util_funcs.tuple_append(begin_song, gen_loop, end_song)
 
