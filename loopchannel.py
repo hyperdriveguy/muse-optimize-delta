@@ -19,7 +19,7 @@ def optimize_loopchannel(song):
         lookahead, redundancy = build_ideal_lookahead(song,
                                                       file_index,
                                                       index_blacklist)
-        if redundancy == 0:
+        if redundancy == 1:
             file_index += 1
             continue
 
@@ -76,7 +76,7 @@ def build_ideal_lookahead(song, start_index, blacklist):
             lookahead += 1
         else:
             found_ideal_lookahead = True
-    return (ideal_lookahead, ideal_matches - 1)
+    return (ideal_lookahead, ideal_matches)
 
 
 def insert_loops(song, start_index, lookahead, loop_times, loop_num):
