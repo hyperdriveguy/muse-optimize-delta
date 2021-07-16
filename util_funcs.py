@@ -322,10 +322,15 @@ def make_callchannel_blacklists(song):
     return sorted_bl
 
 
-def make_loopchannel_blacklists(song):
+def make_loopchannel_blacklists(song, inside_calls=True):
     loopchannel_bl = make_looped_channel_blacklist(song)
     label_bl = make_label_blacklist(song)
-    unoptimizable_bl = make_unoptimizable_blacklist(song)
+    if inside_calls:
+        unoptimizable_bl = make_unoptimizable_blacklist(song)
+    else:
+        unoptimizable_bl = make_unoptimizable_blacklist(song, include_callchannel=False)
+        called_channels = make_called_channel_blacklist(song)
+        unoptimizable_bl = tuple_append(unoptimizable_bl, called_channels)
     full_bl = tuple_append(
         loopchannel_bl, label_bl, unoptimizable_bl)
     del loopchannel_bl
