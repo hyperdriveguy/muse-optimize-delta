@@ -2,6 +2,7 @@
 import pytest
 import museoptimize
 import callchannel
+import loopchannel
 import util_funcs
 
 
@@ -279,7 +280,7 @@ empty_score_asm_optimized_looped = ('Music_GBTemplate:\n',
                                     'Music_GBTemplate_Branch1:\n',
                                     'Music_GBTemplate_loop1:\n',
                                     '\tnote __, 4\n',
-                                    '\tloopchannel 16, Music_GBTemplate_loop1',
+                                    '\tloopchannel 16, Music_GBTemplate_loop1\n',
                                     '\tendchannel\n')
 
 no_nesting = ('Yeet:\n',
@@ -305,7 +306,7 @@ looped_cal = ('Yeet:\n',
               'Yeet_loop1:\n',
               '\tnote A_, 2\n',
               '\tcallchannel yote\n',
-              '\tloopchannel 5, Yeet_loop1',
+              '\tloopchannel 5, Yeet_loop1\n',
               '\tjumpchannel Yeet\n',
               'yote:\n',
               '\tnote A_, 2\n',
@@ -745,6 +746,16 @@ def test_make_branch():
     assert formed_branch_2[-1] == '\tendchannel\n'
     assert formed_branch_2[1:-1] == branch_2_contents
 
+
+def test_optimize_loopchannel():
+    assert loopchannel.optimize_loopchannel(no_nesting, inside_called=False) == looped_cal
+    assert loopchannel.optimize_loopchannel(empty_score_asm_optimized) == empty_score_asm_optimized_looped
+
+
+def test_build_ideal_loop_lookahead():
+    no_nest_loop_bl = (0, 12, 13, 14, 15, 16, 17)
+    assert loopchannel.build_ideal_lookahead(no_nesting, 1, no_nest_loop_bl) == (1, 5)
+    assert loopchannel.build_ideal_lookahead(empty_score_asm_optimized, 31, (30, 47)) == (0, 16)
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
