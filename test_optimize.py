@@ -245,6 +245,43 @@ empty_score_asm_optimized = ('Music_GBTemplate:\n',
                              '\tnote __, 4\n',
                              '\tnote __, 4\n',
                              '\tendchannel\n')
+
+empty_score_asm_optimized_looped = ('Music_GBTemplate:\n',
+                                    '\tmusicheader 4, 1, Music_GBTemplate_Ch1\n',
+                                    '\tmusicheader 1, 2, Music_GBTemplate_Ch2\n',
+                                    '\tmusicheader 1, 3, Music_GBTemplate_Ch3\n',
+                                    '\tmusicheader 1, 4, Music_GBTemplate_Ch4\n',
+                                    'Music_GBTemplate_Ch1:\n',
+                                    '\ttempo 640\n',
+                                    '\tvolume $77\n',
+                                    '\tnotetype $c, $95\n',
+                                    '\tdutycycle $2\n',
+                                    'Music_GBTemplate_Ch1_Loop:\n',
+                                    '\tcallchannel Music_GBTemplate_Branch1\n',
+                                    '\tjumpchannel Music_GBTemplate_Ch1_Loop\n',
+                                    'Music_GBTemplate_Ch2:\n',
+                                    '\tnotetype $c, $95\n',
+                                    '\tdutycycle $2\n',
+                                    'Music_GBTemplate_Ch2_Loop:\n',
+                                    '\tcallchannel Music_GBTemplate_Branch1\n',
+                                    '\tjumpchannel Music_GBTemplate_Ch2_Loop\n',
+                                    'Music_GBTemplate_Ch3:\n',
+                                    '\tnotetype $c, $15\n',
+                                    'Music_GBTemplate_Ch3_Loop:\n',
+                                    '\tcallchannel Music_GBTemplate_Branch1\n',
+                                    '\tjumpchannel Music_GBTemplate_Ch3_Loop\n',
+                                    'Music_GBTemplate_Ch4:\n',
+                                    '\tnotetype $c\n',
+                                    '\ttogglenoise 1\n',
+                                    'Music_GBTemplate_Ch4_Loop:\n',
+                                    '\tcallchannel Music_GBTemplate_Branch1\n',
+                                    '\tjumpchannel Music_GBTemplate_Ch4_Loop\n',
+                                    'Music_GBTemplate_Branch1:\n',
+                                    'Music_GBTemplate_loop1:\n',
+                                    '\tnote __, 4\n',
+                                    '\tloopchannel 16, Music_GBTemplate_loop1',
+                                    '\tendchannel\n')
+
 no_nesting = ('Yeet:\n',
               '\tnote A_, 2\n',
               '\tcallchannel yote\n',
@@ -264,6 +301,19 @@ no_nesting = ('Yeet:\n',
               '\tnote D_, 2\n',
               '\tendchannel\n')
 
+looped_cal = ('Yeet:\n',
+              'Yeet_loop1:\n',
+              '\tnote A_, 2\n',
+              '\tcallchannel yote\n',
+              '\tloopchannel 5, Yeet_loop1',
+              '\tjumpchannel Yeet\n',
+              'yote:\n',
+              '\tnote A_, 2\n',
+              '\tnote B_, 2\n',
+              '\tnote C_, 2\n',
+              '\tnote D_, 2\n',
+              '\tendchannel\n')
+
 
 no_nesting_blacklist = (0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 17)
 empty_score_blacklist = (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
@@ -271,6 +321,10 @@ empty_score_blacklist = (0, 1, 2, 3, 4, 5, 7, 10, 28, 31, 49, 51, 69, 71, 72)
 
 def test_read_file():
     assert museoptimize.read_file('empty_score.asm') == empty_score_asm
+
+
+def test_format_size_diff():
+    assert museoptimize.format_size_diff(100, 100) == 'Before optimization: 100\nAfter optimization: 100\n100.00% of original size'
 
 
 def test_song_scrub():
@@ -388,6 +442,22 @@ def test_nested_tuples():
         assert True
 
 
+def test_flatten_tuple():
+    tup1 = ((1, 2, 3), (1, 2, 3))
+    tup2 = (('a', 'b', 'c'), ('d', 'e', 'f'))
+    assert util_funcs.flatten_tuple(tup1) == (1, 2, 3, 1, 2, 3)
+    assert util_funcs.flatten_tuple(tup2) == ('a', 'b', 'c', 'd', 'e', 'f')
+
+
+def test_remove_dup():
+    dups1 = (1, 1, 1, 2, 2, 4, 3)
+    dups2 = ('a', 'a', 'b', 'a', 'c')
+    dups3 = ((1, 2, 3), (4, 5, 6), (1, 2, 3))
+    assert util_funcs.remove_dup(dups1) == (1, 2, 3, 4)
+    assert tuple(sorted(util_funcs.remove_dup(dups2))) == ('a', 'b', 'c')
+    assert util_funcs.remove_dup(dups3) == ((1, 2, 3), (4, 5, 6))
+
+
 def test_filter_non_command_whitespace():
     assert util_funcs.filter_comments_space('\n') is False
     assert util_funcs.filter_comments_space('\t\n') is False
@@ -497,6 +567,79 @@ def test_get_command_size():
     assert util_funcs.get_command_size('musicheader') == 3
 
 
+def test_make_called_channel_blacklist():
+    empty_score_blacklist_called = util_funcs.make_called_channel_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == ()
+
+    no_nesting_blacklist_called = util_funcs.make_called_channel_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (12, 13, 14, 15, 16, 17)
+
+
+def test_make_looped_channel_blacklist():
+    loop_test = ('Loop:\n', '\tnote A_, 2\n', '\tloopchannel 6, Loop\n')
+    assert util_funcs.make_looped_channel_blacklist(loop_test) == (0, 1, 2)
+    assert util_funcs.make_looped_channel_blacklist(looped_cal) == (1, 2, 3, 4)
+
+
+def test_make_unoptimizable_blacklist():
+    empty_score_blacklist_called = util_funcs.make_unoptimizable_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == (1, 2, 3, 4, 7, 71)
+
+    no_nesting_blacklist_called = util_funcs.make_unoptimizable_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (2, 4, 6, 8, 10, 17)
+
+
+def test_make_label_blacklist():
+    empty_score_blacklist_called = util_funcs.make_label_blacklist(
+        empty_score_asm_scrubbed)
+    assert empty_score_blacklist_called == (0, 5, 10, 28, 31, 49, 51, 69, 72)
+
+    no_nesting_blacklist_called = util_funcs.make_label_blacklist(
+        no_nesting)
+    assert no_nesting_blacklist_called == (0, 12)
+
+
+def test_make_callchannel_blacklists():
+    gen_empty_song_blacklist = util_funcs.make_callchannel_blacklists(
+        empty_score_asm_scrubbed)
+    assert gen_empty_song_blacklist == empty_score_blacklist
+
+    gen_no_nest_blacklist = util_funcs.make_callchannel_blacklists(no_nesting)
+    assert gen_no_nest_blacklist == no_nesting_blacklist
+
+
+def test_make_loopchannel_blacklists():
+    assert util_funcs.make_loopchannel_blacklists(empty_score_asm_optimized_looped) == (0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 17, 19, 21, 22, 24, 26, 27, 28, 30, 31, 32, 33, 34)
+    assert util_funcs.make_loopchannel_blacklists(looped_cal) == (0, 1, 2, 3, 4, 6, 11)
+
+
+def test_parse_matches_blacklist():
+    assert new_blacklist_no_nest == no_nesting_blacklist
+    empty_score_expected_blacklist = (
+        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 17, 19, 21, 22, 24, 26, 27, 28)
+    assert new_blacklist_empty == empty_score_expected_blacklist
+
+
+def test_range_in_blacklist():
+    assert util_funcs.range_in_blacklist(
+        0, 2, no_nesting_blacklist) is True
+    assert util_funcs.range_in_blacklist(
+        13, 3, no_nesting_blacklist) is True
+    assert util_funcs.range_in_blacklist(
+        9, 0, no_nesting_blacklist) is False
+
+    assert util_funcs.range_in_blacklist(
+        8, 1, empty_score_blacklist) is False
+    assert util_funcs.range_in_blacklist(
+        11, 16, empty_score_blacklist) is False
+    assert util_funcs.range_in_blacklist(
+        68, 2, empty_score_blacklist) is True
+
+
 def test_optimize_callchannel():
     assert callchannel.optimize_callchannel(empty_score_asm_scrubbed) == \
         empty_score_asm_optimized
@@ -552,9 +695,7 @@ def test_parse_matches():
     global new_blacklist_no_nest
     song_no_nest, branch_no_nest, new_blacklist_no_nest = \
         callchannel.parse_matches(no_nesting, 1, 1, no_nesting_blacklist, 1)
-    song_and_branch = util_funcs.tuple_append(song_no_nest, branch_no_nest)
-    assert branch_no_nest == ()
-    assert song_and_branch == song_no_nest
+    assert song_no_nest == no_nesting
 
 
 def test_make_new_branch_call():
@@ -603,68 +744,6 @@ def test_make_branch():
     assert formed_branch_2[0] == 'Music_GBTemplate_Branch2:\n'
     assert formed_branch_2[-1] == '\tendchannel\n'
     assert formed_branch_2[1:-1] == branch_2_contents
-
-
-def test_range_in_blacklist():
-    assert callchannel.range_in_blacklist(
-        0, 2, no_nesting_blacklist) is True
-    assert callchannel.range_in_blacklist(
-        13, 3, no_nesting_blacklist) is True
-    assert callchannel.range_in_blacklist(
-        9, 0, no_nesting_blacklist) is False
-
-    assert callchannel.range_in_blacklist(
-        8, 1, empty_score_blacklist) is False
-    assert callchannel.range_in_blacklist(
-        11, 16, empty_score_blacklist) is False
-    assert callchannel.range_in_blacklist(
-        68, 2, empty_score_blacklist) is True
-
-
-def test_make_called_channel_blacklist():
-    empty_score_blacklist_called = callchannel.make_called_channel_blacklist(
-        empty_score_asm_scrubbed)
-    assert empty_score_blacklist_called == ()
-
-    no_nesting_blacklist_called = callchannel.make_called_channel_blacklist(
-        no_nesting)
-    assert no_nesting_blacklist_called == (12, 13, 14, 15, 16, 17)
-
-
-def test_make_unoptimizable_blacklist():
-    empty_score_blacklist_called = callchannel.make_unoptimizable_blacklist(
-        empty_score_asm_scrubbed)
-    assert empty_score_blacklist_called == (1, 2, 3, 4, 7, 71)
-
-    no_nesting_blacklist_called = callchannel.make_unoptimizable_blacklist(
-        no_nesting)
-    assert no_nesting_blacklist_called == (2, 4, 6, 8, 10, 17)
-
-
-def test_make_label_blacklist():
-    empty_score_blacklist_called = callchannel.make_label_blacklist(
-        empty_score_asm_scrubbed)
-    assert empty_score_blacklist_called == (0, 5, 10, 28, 31, 49, 51, 69, 72)
-
-    no_nesting_blacklist_called = callchannel.make_label_blacklist(
-        no_nesting)
-    assert no_nesting_blacklist_called == (0, 12)
-
-
-def test_make_all_blacklists():
-    gen_empty_song_blacklist = callchannel.make_all_blacklists(
-        empty_score_asm_scrubbed)
-    assert gen_empty_song_blacklist == empty_score_blacklist
-
-    gen_no_nest_blacklist = callchannel.make_all_blacklists(no_nesting)
-    assert gen_no_nest_blacklist == no_nesting_blacklist
-
-
-def test_parse_matches_blacklist():
-    assert new_blacklist_no_nest == no_nesting_blacklist
-    empty_score_expected_blacklist = (
-        0, 1, 2, 3, 4, 5, 7, 10, 11, 13, 16, 17, 19, 21, 22, 24, 26, 27, 28)
-    assert new_blacklist_empty == empty_score_expected_blacklist
 
 
 
