@@ -11,7 +11,7 @@ def main():
     if input_file == ():
         return
     scrubbed_song = scrub_song(input_file)
-    optimized_song, orignal_size, optimum_size = run_optimization_passes(scrubbed_song)
+    optimized_song, orignal_size, optimum_size = run_optimization_passes(scrubbed_song, no_panning=args.mono)
     print(format_size_diff(orignal_size, optimum_size))
     write_file(args.output, optimized_song)
 
