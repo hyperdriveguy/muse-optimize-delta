@@ -4,6 +4,8 @@ import museoptimize
 import callchannel
 import loopchannel
 import util_funcs
+import other_compression
+import optimization_passes
 
 
 empty_score_asm = ('Music_GBTemplate:\n',
@@ -283,6 +285,10 @@ empty_score_asm_optimized_looped = ('Music_GBTemplate:\n',
                                     '\tloopchannel 16, Music_GBTemplate_loop1\n',
                                     '\tendchannel\n')
 
+empty_score_asm_inner_loop = ('Music_GBTemplate_loop1:\n',
+                              '\tnote __, 4\n',
+                              '\tloopchannel 16, Music_GBTemplate_loop1\n')
+
 no_nesting = ('Yeet:\n',
               '\tnote A_, 2\n',
               '\tcallchannel yote\n',
@@ -314,6 +320,26 @@ looped_cal = ('Yeet:\n',
               '\tnote C_, 2\n',
               '\tnote D_, 2\n',
               '\tendchannel\n')
+
+inner_oop = ('Yeet_loop1:\n',
+             '\tnote A_, 2\n',
+             '\tcallchannel yote\n',
+             '\tloopchannel 5, Yeet_loop1\n')
+
+stereopanning_test = ('Yeet:\n',
+                      '\tstereopanning $0f\n',
+                      '\tnote A_, 1\n',
+                      '\tstereopanning $f0\n',
+                      '\tnote B_, 4\n',
+                      '\tstereopanning $ff\n',
+                      '\tnote C_, 3\n',
+                      '\tendchannel\n')
+
+stereopanning_test_stripped = ('Yeet:\n',
+                               '\tnote A_, 1\n',
+                               '\tnote B_, 4\n',
+                               '\tnote C_, 3\n',
+                               '\tendchannel\n')
 
 
 no_nesting_blacklist = (0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 17)
@@ -756,6 +782,30 @@ def test_build_ideal_loop_lookahead():
     no_nest_loop_bl = (0, 12, 13, 14, 15, 16, 17)
     assert loopchannel.build_ideal_lookahead(no_nesting, 1, no_nest_loop_bl) == (1, 5)
     assert loopchannel.build_ideal_lookahead(empty_score_asm_optimized, 31, (30, 47)) == (0, 16)
+
+
+def test_insert_loops():
+    assert loopchannel.insert_loops(no_nesting, 1, 1, 5, 1) == looped_cal
+    assert loopchannel.insert_loops(empty_score_asm_optimized, 31, 0, 16, 1 == empty_score_asm_optimized_looped)
+
+
+def test_format_loop():
+    assert loopchannel.format_loop(no_nesting, ('\tnote A_, 2\n', '\tcallchannel yote\n'), 5, 1) == inner_oop
+    assert loopchannel.format_loop(empty_score_asm_optimized, ('\tnote __, 4\n',), 16, 1) == empty_score_asm_inner_loop
+
+
+def test_remove_steropanning():
+    assert other_compression.remove_stereopanning(empty_score_asm) == empty_score_asm
+    assert other_compression.remove_stereopanning(no_nesting) == no_nesting
+    assert other_compression.remove_stereopanning(stereopanning_test) == stereopanning_test_stripped
+
+
+def test_convert_loopchannel():
+    loop_test_1 = ('Yeet:\n', '\tnote A_, 1\n', '\tloopchannel 0, Yeet\n')
+    loop_test_2 = ('Yote:\n', '\tnote A_, 1\n', '\tloopchannel 99, Yote\n')
+    loop_test_1_converted = ('Yeet:\n', '\tnote A_, 1\n', '\tjumpchannel Yeet\n')
+    assert other_compression.convert_loopchannel(loop_test_1) == loop_test_1_converted
+    assert other_compression.convert_loopchannel(loop_test_2) == loop_test_2
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
