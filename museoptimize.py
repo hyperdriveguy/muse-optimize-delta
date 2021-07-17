@@ -11,7 +11,7 @@ def main():
     if input_file == ():
         return
     scrubbed_song = scrub_song(input_file)
-    optimized_song, orignal_size, optimum_size = run_optimization_passes(scrubbed_song, no_panning=args.mono)
+    optimized_song, orignal_size, optimum_size = run_optimization_passes(scrubbed_song, no_panning=args.mono, agress=args.agressive)
     print(format_size_diff(orignal_size, optimum_size))
     write_file(args.output, optimized_song)
 
@@ -22,7 +22,8 @@ def get_args():
                     'music scripts.')
     parser.add_argument('asm', help='script input file')
     parser.add_argument('output', help='optimized output file')
-    parser.add_argument('-m', '--mono', help='remove stereopanning')
+    parser.add_argument('-m', '--mono', type=bool, help='remove stereopanning')
+    parser.add_argument('-a', '--agressive', type=bool, help='Use more agressive optimization (takes longer)')
     return parser.parse_args()
 
 
