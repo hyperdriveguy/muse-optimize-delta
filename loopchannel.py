@@ -1,7 +1,7 @@
 import util_funcs
 
 
-def optimize_loopchannel(song, inside_called=True):
+def optimize_loopchannel(song, inside_called=True, agress=False):
     """
     Reduces redundant commands that appear all in a row.
 
@@ -18,7 +18,8 @@ def optimize_loopchannel(song, inside_called=True):
     while file_index < len(song):
         lookahead, redundancy = build_ideal_lookahead(song,
                                                       file_index,
-                                                      index_blacklist)
+                                                      index_blacklist,
+                                                      agressive=agress)
         if redundancy == 1:
             file_index += 1
             continue
@@ -30,7 +31,7 @@ def optimize_loopchannel(song, inside_called=True):
     return song
 
 
-def build_ideal_lookahead(song, start_index, blacklist):
+def build_ideal_lookahead(song, start_index, blacklist, agressive=False):
     """
     Find the ideal number of commands for the loop to contain.
 
@@ -56,6 +57,8 @@ def build_ideal_lookahead(song, start_index, blacklist):
                 num_matches += 1
                 # Increase by window length to avoid conflicts
                 cur_index += len(window)
+            elif not agressive and num_matches == 1:
+                break
             else:
                 # End here because the next match will not be adjacent
                 break
@@ -90,6 +93,3 @@ def format_loop(song, inner_loop, loop_times, loop_num):
     label = f'{util_funcs.get_song_name(song)}_loop{loop_num}:\n'
     looper = f'\tloopchannel {loop_times}, {label[:-2]}\n'
     return util_funcs.tuple_append((label,), inner_loop, (looper,))
-
-
-
