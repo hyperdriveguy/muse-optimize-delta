@@ -57,8 +57,6 @@ def build_ideal_lookahead(song, start_index, blacklist, agressive=False):
                 num_matches += 1
                 # Increase by window length to avoid conflicts
                 cur_index += len(window)
-            elif not agressive and num_matches == 1:
-                break
             else:
                 # End here because the next match will not be adjacent
                 break
@@ -74,6 +72,8 @@ def build_ideal_lookahead(song, start_index, blacklist, agressive=False):
                 prev_size_savings = cur_savings
                 ideal_lookahead = lookahead
                 ideal_matches = matches
+            elif not agressive and matches == 1:
+                found_ideal_lookahead = True
             lookahead += 1
         else:
             found_ideal_lookahead = True
