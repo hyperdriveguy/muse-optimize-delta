@@ -816,6 +816,21 @@ def test_convert_loopchannel():
 
 def test_loop_then_call_optimize():
     assert optimization_passes.loop_then_call_optimize(empty_score_asm_scrubbed, True) == empty_score_asm_optimized_looped
+    assert optimization_passes.loop_then_call_optimize(empty_score_asm_optimized, True) == empty_score_asm_optimized_looped
+
+
+def test_check_matching_loopchannel_contents():
+    loop1 = ('loop1:\n', '\tnote A_, 3\n', '\tloopchannel 8, loop1\n')
+    loop2 = ('loop2:\n', '\tnote A_, 3\n', '\tloopchannel 8, loop2\n')
+    loop3 = ('loop3:\n', '\tnote A_, 3\n', '\tnote B_, 3\n', '\tloopchannel 8, loop3\n')
+    assert callchannel.check_matching_loopchannel_contents(loop1, loop2) is True
+    assert callchannel.check_matching_loopchannel_contents(loop1, loop3) is False
+    assert callchannel.check_matching_loopchannel_contents(loop2, loop3) is False
+
+
+def test_run_optimization_passes():
+    assert optimization_passes.run_optimization_passes(empty_score_asm_scrubbed) == (empty_score_asm_optimized_looped, 108, 62)
+    assert optimization_passes.run_optimization_passes(no_nesting, agress=True) == (looped_cal, 28, 16)
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
