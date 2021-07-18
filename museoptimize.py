@@ -22,8 +22,8 @@ def get_args():
                     'music scripts.')
     parser.add_argument('asm', help='script input file')
     parser.add_argument('output', help='optimized output file')
-    parser.add_argument('-m', '--mono', type=bool, help='remove stereopanning')
-    parser.add_argument('-a', '--agressive', type=bool, help='Use more agressive optimization (takes longer)')
+    parser.add_argument('-m', '--mono', action='store_true', help='remove stereopanning')
+    parser.add_argument('-a', '--agressive', action='store_true', help='Use more agressive optimization (takes longer)')
     return parser.parse_args()
 
 
