@@ -671,6 +671,9 @@ def test_optimize_callchannel():
     assert callchannel.optimize_callchannel(empty_score_asm_scrubbed) == \
         empty_score_asm_optimized
     assert callchannel.optimize_callchannel(no_nesting) == no_nesting
+    # Below are aliases for optimize callchannel
+    assert optimization_passes.reused_call_optimize(no_nesting, False) == no_nesting
+    assert optimization_passes.reused_call_optimize(empty_score_asm_scrubbed, False) == empty_score_asm_optimized
 
 
 def test_build_ideal_lookahead():
@@ -774,13 +777,16 @@ def test_make_branch():
 
 
 def test_optimize_loopchannel():
-    assert loopchannel.optimize_loopchannel(no_nesting, inside_called=False) == looped_cal
+    assert loopchannel.optimize_loopchannel(no_nesting, inside_called=False, agress=True) == looped_cal
     assert loopchannel.optimize_loopchannel(empty_score_asm_optimized) == empty_score_asm_optimized_looped
+    # Below are aliases for optimize_loopchannel
+    assert optimization_passes.loop_outside_call_optimize(no_nesting, True) == looped_cal
+    assert optimization_passes.loop_optimize_inside_call(empty_score_asm_optimized, False) == empty_score_asm_optimized_looped
 
 
 def test_build_ideal_loop_lookahead():
     no_nest_loop_bl = (0, 12, 13, 14, 15, 16, 17)
-    assert loopchannel.build_ideal_lookahead(no_nesting, 1, no_nest_loop_bl) == (1, 5)
+    assert loopchannel.build_ideal_lookahead(no_nesting, 1, no_nest_loop_bl, agressive=True) == (1, 5)
     assert loopchannel.build_ideal_lookahead(empty_score_asm_optimized, 31, (30, 47)) == (0, 16)
 
 
@@ -806,6 +812,10 @@ def test_convert_loopchannel():
     loop_test_1_converted = ('Yeet:\n', '\tnote A_, 1\n', '\tjumpchannel Yeet\n')
     assert other_compression.convert_loopchannel(loop_test_1) == loop_test_1_converted
     assert other_compression.convert_loopchannel(loop_test_2) == loop_test_2
+
+
+def test_loop_then_call_optimize():
+    assert optimization_passes.loop_then_call_optimize(empty_score_asm_scrubbed, True) == empty_score_asm_optimized_looped
 
 
 pytest.main(["-v", "--tb=line", "-rN", "test_optimize.py"])
