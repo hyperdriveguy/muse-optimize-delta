@@ -307,30 +307,38 @@ def make_label_blacklist(song):
 
 
 def make_callchannel_blacklists(song):
+    loopchannel_whitelist = make_looped_channel_blacklist(song)
+    
+    def cancel_out_whitelist(line):
+        if line in loopchannel_whitelist:
+            return False
+        return True
+        
     callchannel_bl = make_called_channel_blacklist(song)
     label_bl = make_label_blacklist(song)
+    clean_label_bl = tuple(filter(cancel_out_whitelist, label_bl))
     unoptimizable_bl = make_unoptimizable_blacklist(song)
     full_bl = tuple_append(
-        callchannel_bl, label_bl, unoptimizable_bl)
+        callchannel_bl, clean_label_bl, unoptimizable_bl)
     del callchannel_bl
     del label_bl
     del unoptimizable_bl
-    del_redundant_bl = remove_dup(full_bl)
+    no_redundant_bl = remove_dup(full_bl)
     del full_bl
-    sorted_bl = tuple(sorted(del_redundant_bl))
-    del del_redundant_bl
+    sorted_bl = tuple(sorted(no_redundant_bl))
+    del no_redundant_bl
     return sorted_bl
 
 
 def make_loopchannel_blacklists(song, inside_calls=True):
     loopchannel_bl = make_looped_channel_blacklist(song)
     label_bl = make_label_blacklist(song)
-    if inside_calls:
-        unoptimizable_bl = make_unoptimizable_blacklist(song)
-    else:
+    if not inside_calls:
         unoptimizable_bl = make_unoptimizable_blacklist(song, include_callchannel=False)
         called_channels = make_called_channel_blacklist(song)
         unoptimizable_bl = tuple_append(unoptimizable_bl, called_channels)
+    else:
+        unoptimizable_bl = make_unoptimizable_blacklist(song)
     full_bl = tuple_append(
         loopchannel_bl, label_bl, unoptimizable_bl)
     del loopchannel_bl
