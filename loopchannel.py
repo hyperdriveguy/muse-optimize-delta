@@ -72,7 +72,7 @@ def build_ideal_lookahead(song, start_index, blacklist, agressive=False):
                 prev_size_savings = cur_savings
                 ideal_lookahead = lookahead
                 ideal_matches = matches
-            elif not agressive and matches == 1:
+            if not agressive and matches == 1:
                 found_ideal_lookahead = True
             lookahead += 1
         else:
