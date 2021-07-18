@@ -6,16 +6,16 @@ from loopchannel import optimize_loopchannel
 from other_compression import convert_loopchannel, remove_stereopanning
 
 
-def reused_call_optimize(song):
+def reused_call_optimize(song, agressive):
     print('Doing callchannel optimizations [Type 1 & 2]...')
-    call_optimize = optimize_callchannel(song)
+    call_optimize = optimize_callchannel(song, agress=agressive)
     print('Completed callchannel optimizations [Type 1 & 2]!')
     return call_optimize
 
 
 def loop_outside_call_optimize(call_optimize, agressive):
     print('Doing loopchannel optimizations [Type 1]...')
-    loop_optimize = optimize_loopchannel(call_optimize, agress=agressive)
+    loop_optimize = optimize_loopchannel(call_optimize, inside_called=False ,agress=agressive)
     print('Completed loopchannel optimizations [Type 1]!')
     print('Completed optimization type 1')
     return loop_optimize
@@ -32,9 +32,9 @@ def loop_optimize_inside_call(call_optimize, agressive):
 def loop_then_call_optimize(song, agressive):
     print('Doing loopchannel optimizations [Type 3]...')
     loop_optimize = optimize_loopchannel(song, agress=agressive)
-    print('Completed loopchannel optimaztions [Type 3]!')
+    print('Completed loopchannel optimizations [Type 3]!')
     print('Doing callchannel optimizations [Type 3]...')
-    call_optimize = optimize_callchannel(loop_optimize)
+    call_optimize = optimize_callchannel(loop_optimize, agress=agressive)
     print('Completed callchannel optimizations [Type 3]!')
     print('Completed optimization type 3')
     return call_optimize
@@ -46,7 +46,7 @@ def run_optimization_passes(song, no_panning=False, agress=False):
         song_cleaned = convert_loopchannel(song)
         if no_panning:
             song_cleaned = remove_stereopanning(song_cleaned)
-        future_reused_call = executor.submit(reused_call_optimize, song_cleaned)
+        future_reused_call = executor.submit(reused_call_optimize, song_cleaned, agress)
         future_loop_first = executor.submit(loop_then_call_optimize, song_cleaned, agress)
         # The results of this partial optimization method are reusable
         song_reused_call = future_reused_call.result()
