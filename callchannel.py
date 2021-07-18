@@ -1,7 +1,7 @@
 import util_funcs
 
 
-def optimize_callchannel(song):
+def optimize_callchannel(song, agress=False):
     """
     Makes different reusable song branches to be called.
 
@@ -23,7 +23,8 @@ def optimize_callchannel(song):
     while file_index < len(song):
         lookahead = build_ideal_lookahead(song,
                                           file_index,
-                                          index_blacklist)
+                                          index_blacklist,
+                                          agressive=agress)
         if lookahead == 0:
             file_index += 1
             continue
@@ -38,7 +39,7 @@ def optimize_callchannel(song):
     return util_funcs.tuple_append(song, branches)
 
 
-def build_ideal_lookahead(song, start_index, blacklist):
+def build_ideal_lookahead(song, start_index, blacklist, agressive=False):
     lookahead = 0
     found_ideal_lookahead = False
     ideal_lookahead = 0
@@ -50,10 +51,12 @@ def build_ideal_lookahead(song, start_index, blacklist):
         cur_index = start_index + len(window)
         while cur_index < len(song) - lookahead:
             song_subset = song[cur_index:cur_index + lookahead + 1]
-            if(window == song_subset and
+            if((window == song_subset and
                     not util_funcs.range_in_blacklist(cur_index,
-                                           lookahead,
-                                           blacklist)):
+                                                      lookahead,
+                                                      blacklist))
+                    or check_matching_loopchannel_contents(window,
+                                                           song_subset)):
                 num_matches += 1
                 # Increase by window length to avoid conflicts
                 cur_index += len(window)
@@ -61,7 +64,7 @@ def build_ideal_lookahead(song, start_index, blacklist):
                 cur_index += 1
         return num_matches
 
-    while not found_ideal_lookahead:
+    while not found_ideal_lookahead and start_index + lookahead < len(song) - 1:
         if not util_funcs.range_in_blacklist(start_index, lookahead, blacklist):
             window = song[start_index:start_index + lookahead + 1]
             matches = calc_matches_in_window()
@@ -70,7 +73,7 @@ def build_ideal_lookahead(song, start_index, blacklist):
                 # This ensures minimum savings is zero, preventing regressions
                 prev_size_savings = cur_savings
                 ideal_lookahead = lookahead
-            if matches == 1:
+            if not agressive and matches == 1:
                 found_ideal_lookahead = True
             lookahead += 1
         else:
@@ -84,6 +87,25 @@ def calc_callchannel_savings(song_subset, matches):
     return matches_size - callchannel_size
 
 
+def check_matching_loopchannel_contents(window, song_subset):
+    """Compensates for the fact that looping channels have different labels."""
+
+    def convert_loopchannel_labels(line):
+        if util_funcs.filter_labels(line):
+            return 'loop:\n'
+        elif util_funcs.get_root_command(line) == 'loopchannel':
+            num_loops = line.strip().split(' ')[1]
+            return f'\tloopchannel {num_loops} loop\n'
+        else:
+            return line
+
+    parsed_window = tuple(map(convert_loopchannel_labels, window))
+    parsed_song_subset = tuple(map(convert_loopchannel_labels, song_subset))
+    if parsed_window == parsed_song_subset:
+        return True
+    return False
+
+
 def parse_matches(song, start_index, lookahead, blacklist, branch):
     window = song[start_index:start_index + lookahead + 1]
     called_branch = make_branch(song, branch, window)
@@ -91,10 +113,12 @@ def parse_matches(song, start_index, lookahead, blacklist, branch):
     cur_index = start_index
     while cur_index < len(song) - lookahead:
         song_subset = song[cur_index:cur_index + lookahead + 1]
-        if(window == song_subset and
+        if((window == song_subset and
                 not util_funcs.range_in_blacklist(cur_index,
-                                       lookahead,
-                                       blacklist)):
+                                                  lookahead,
+                                                  blacklist))
+                or check_matching_loopchannel_contents(window,
+                                                       song_subset)):
             song = make_new_branch_call(song,
                                         cur_index,
                                         cur_index + lookahead,
